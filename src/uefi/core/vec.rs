@@ -1,4 +1,4 @@
-use kcore::traits::Container;
+use uefi::core::traits::Container;
 
 impl<'self, T> Container for &'self [T] {
     fn len(&self) -> uint {

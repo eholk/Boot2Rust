@@ -1,4 +1,4 @@
-use kcore::traits::Container;
+use uefi::core::traits::Container;
 
 impl<'self> Container for &'self str {
     #[no_split_stack]

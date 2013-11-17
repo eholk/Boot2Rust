@@ -2,7 +2,6 @@
 
 use uefi::SimpleTextOutput;
 
-mod kcore;
 mod uefi;
 
 #[no_split_stack]
