@@ -43,27 +43,19 @@ pub extern "win64" fn efi_main(_ImageHandle : EFI_HANDLE, SystemTable : *EFI_SYS
         let conout = SystemTable.ConOut;
         let output = (*conout).OutputString;
 
-        let hello = ['H' as u16,
-                     'e' as u16,
-                     'l' as u16,
-                     'l' as u16,
-                     'o' as u16,
-                     ',' as u16,
-                     ' ' as u16,
-                     'W' as u16,
-                     'o' as u16,
-                     'r' as u16,
-                     'l' as u16,
-                     'd' as u16,
-                     '\r' as u16,
-                     '\n' as u16,
-                     0u16];
-        let (hello_ptr, _) = buf_ptr(hello);
+        let hello = "H\0e\0l\0l\0o\0,\0 \0W\0o\0r\0l\0d\0!\0\n\0\r\0";
 
-        output(conout, hello_ptr);
+        output(conout, str_as_u16(hello));
 
         loop {
         }
+    }
+}
+
+fn str_as_u16(s: &str) -> *u16 {
+    unsafe {
+        let (p, _) : (*u8, uint) = transmute(s);
+        transmute(p)
     }
 }
 
