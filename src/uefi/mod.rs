@@ -41,6 +41,7 @@ type EFI_TEXT_STRING = extern "win64" fn(*EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
 pub struct SystemTable(*EFI_SYSTEM_TABLE);
 
 impl SystemTable {
+    #[no_split_stack]
     fn console(&self) -> Console {
         unsafe {
             Console {
@@ -112,4 +113,19 @@ pub fn fail_bounds_check(_: *i8, _: uint, _: uint, _: uint) {
 
 extern "rust-intrinsic" {
     fn transmute<T,U>(val: T) -> U;
+}
+
+#[no_mangle]
+#[no_split_stack]
+pub extern "win64" fn efi_start(_ImageHandle : EFI_HANDLE,
+                                sys_table : *EFI_SYSTEM_TABLE) -> int {
+    unsafe { SYSTEM_TABLE = sys_table; }
+    ::efi_main(SystemTable(sys_table));
+    0
+}
+
+#[no_mangle]
+#[no_split_stack]
+pub fn __morestack() {
+    // Horrible things will probably happen if this is ever called.
 }
