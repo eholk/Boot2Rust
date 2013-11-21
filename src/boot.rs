@@ -1,5 +1,7 @@
 #[no_std];
 
+#[feature(asm)];
+
 use uefi::SimpleTextOutput;
 
 pub mod core;

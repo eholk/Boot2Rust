@@ -1,6 +1,7 @@
 use core::container::Container;
 
 pub type EFI_HANDLE = *();
+pub struct EFI_GUID((u32, u16, u16, u8, u8, u8, u8, u8, u8, u8, u8));
 
 struct EFI_TABLE_HEADER {
     Signature  : u64,
@@ -18,7 +19,12 @@ pub struct EFI_SYSTEM_TABLE {
     ConIn : *EFI_SIMPLE_TEXT_INPUT_PROTOCOL,
     ConsoleOutHandle : EFI_HANDLE,
     ConOut : *EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
-    // ... other stuff that we're ignoring for now.
+    ConsoleErrorHandle : EFI_HANDLE,
+    StdErr : *EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
+    RuntimeServices : *EFI_RUNTIME_SERVICES,
+    BootServices : *EFI_BOOT_SERVICES,
+    NumberOfTableEntries : uint,
+    ConfigurationTable : *EFI_CONFIGURATION_TABLE
 }
 
 pub static mut SYSTEM_TABLE : *EFI_SYSTEM_TABLE = 0 as *EFI_SYSTEM_TABLE;
@@ -36,7 +42,17 @@ type EFI_TEXT_RESET = *();
 type EFI_TEXT_STRING = extern "win64" fn(*EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
                                          *u16);
 
+struct EFI_RUNTIME_SERVICES;
+
+struct EFI_BOOT_SERVICES;
+
+struct EFI_CONFIGURATION_TABLE {
+    VendorGuid : EFI_GUID,
+    VendorTable : *()
+}
+
 pub struct SystemTable(*EFI_SYSTEM_TABLE);
+
 
 impl SystemTable {
     #[no_split_stack]
@@ -59,21 +75,19 @@ fn unpack<T>(slice: &[T]) -> (*T, uint) {
 pub trait SimpleTextOutput {
     unsafe fn write_raw(&self, str: *u16);
     
-    // This is not re-entrant.. We cannot use it once we have threading.
     #[no_split_stack]
     fn write(&self, str: &str) {
-        static mut buf : [u16, .. 4096] = [0u16, ..4096];
+        let mut buf = [0u16, ..4096];
 
-        unsafe {
+        let mut i = 0;
+        while i < buf.len() && i < str.len() {
+            // TODO: make sure the characters are all ascii
+            buf[i] = str[i] as u16;
+            i += 1;
+        }
+        buf[buf.len() - 1] = 0;
         
-            let mut i = 0;
-            while i < buf.len() && i < str.len() {
-                // TODO: make sure the characters are all ascii
-                buf[i] = str[i] as u16;
-                i += 1;
-            }
-            buf[buf.len() - 1] = 0;
-            
+        unsafe {
             let (p, _) = unpack(buf);
             self.write_raw(p);
         }
@@ -115,4 +129,21 @@ pub extern "win64" fn efi_start(_ImageHandle : EFI_HANDLE,
 #[no_split_stack]
 pub fn __morestack() {
     // Horrible things will probably happen if this is ever called.
+}
+
+#[no_mangle]
+#[no_split_stack]
+pub extern fn memset(s : *u8, c : int, n : uint) -> *u8 {
+    unsafe {
+        let s : &mut [u8] = transmute((s, n));
+        let mut i = 0;
+        while i < n {
+            s[i] = c as u8;
+            i += 1;
+            // Use inline assembly here to defeat LLVM's loop-idiom pass
+            asm!("");
+        }
+    }
+
+    s
 }
