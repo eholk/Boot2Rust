@@ -1,7 +1,7 @@
 use core::container::Container;
 
 pub type EFI_HANDLE = *();
-pub struct EFI_GUID((u32, u16, u16, u8, u8, u8, u8, u8, u8, u8, u8));
+pub struct EFI_GUID(u32, u16, u16, [u8, ..8]);
 
 struct EFI_TABLE_HEADER {
     Signature  : u64,
