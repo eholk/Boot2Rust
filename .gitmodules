@@ -1,0 +1,3 @@
+[submodule "external/rust-core"]
+	path = external/rust-core
+	url = https://github.com/eholk/rust-core.git

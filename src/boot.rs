@@ -2,6 +2,7 @@
 
 use uefi::SimpleTextOutput;
 
+pub mod core;
 pub mod uefi;
 
 #[no_split_stack]

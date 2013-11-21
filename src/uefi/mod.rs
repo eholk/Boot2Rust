@@ -1,6 +1,4 @@
-use uefi::core::traits::Container;
-
-pub mod core;
+use core::traits::Container;
 
 pub type EFI_HANDLE = *();
 
@@ -98,17 +96,6 @@ impl SimpleTextOutput for Console {
 }
 
 impl SimpleTextInput for Console {
-}
-
-#[lang="fail_bounds_check"]
-#[no_split_stack]
-pub fn fail_bounds_check(_: *i8, _: uint, _: uint, _: uint) {
-    unsafe {
-        let sys = SystemTable(SYSTEM_TABLE);
-
-        sys.console().write("Bounds Check Failure");
-        loop {}
-    }
 }
 
 extern "rust-intrinsic" {
