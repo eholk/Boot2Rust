@@ -1,4 +1,4 @@
-use core::traits::Container;
+use core::container::Container;
 
 pub type EFI_HANDLE = *();
 
