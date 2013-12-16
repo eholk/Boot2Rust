@@ -1,3 +1,6 @@
 [submodule "external/rust-core"]
 	path = external/rust-core
 	url = https://github.com/eholk/rust-core.git
+[submodule "external/binutils-gdb"]
+	path = external/binutils-gdb
+	url = git://sourceware.org/git/binutils-gdb.git
