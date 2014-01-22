@@ -2,3 +2,4 @@
 build
 img
 boot.iso
+*.o

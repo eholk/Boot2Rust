@@ -1,10 +1,12 @@
 #[no_std];
 
 #[feature(asm)];
+#[feature(macro_rules)];
+
+extern mod core;
 
 use uefi::SimpleTextOutput;
 
-pub mod core;
 pub mod uefi;
 
 #[no_split_stack]

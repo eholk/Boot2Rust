@@ -56,11 +56,12 @@ pub struct SystemTable(*EFI_SYSTEM_TABLE);
 
 impl SystemTable {
     #[no_split_stack]
-    fn console(&self) -> Console {
+    pub fn console(&self) -> Console {
         unsafe {
+            let &SystemTable(tbl) = self;
             Console {
-                input: (***self).ConIn,
-                output: (***self).ConOut,
+                input:  (*tbl).ConIn,
+                output: (*tbl).ConOut,
             }
         }
     }
