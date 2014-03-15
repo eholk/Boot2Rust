@@ -8,7 +8,7 @@ struct EFI_TABLE_HEADER {
     Revision   : u32,
     HeaderSize : u32,
     CRC32      : u32,
-    priv Reserved : u32
+    Reserved : u32
 }
 
 pub struct EFI_SYSTEM_TABLE {
