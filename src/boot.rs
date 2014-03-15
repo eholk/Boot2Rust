@@ -3,7 +3,7 @@
 #[feature(asm)];
 #[feature(macro_rules)];
 
-extern mod core;
+extern crate core;
 
 use uefi::SimpleTextOutput;
 
@@ -14,4 +14,14 @@ pub fn efi_main(sys : uefi::SystemTable) {
     sys.console().write("Hello, World!\n\r");
 
     loop {}
+}
+
+#[no_mangle]
+pub fn abort() -> ! {
+	loop {}
+}
+
+#[no_mangle]
+pub fn breakpoint() -> ! {
+	loop {}
 }
