@@ -1,15 +1,19 @@
-#[no_std];
-
-#[feature(asm)];
-#[feature(macro_rules)];
+#![no_std]
+#![feature(globs)]
+#![feature(intrinsics)]
+#![feature(asm)]
 
 extern crate core;
 
 use uefi::SimpleTextOutput;
 
+#[allow(non_snake_case)]
+#[allow(dead_code)]
+#[allow(non_camel_case_types)]
+#[allow(missing_copy_implementations)]
 pub mod uefi;
 
-#[no_split_stack]
+#[no_stack_check]
 pub fn efi_main(sys : uefi::SystemTable) {
     sys.console().write("Hello, World!\n\r");
 
