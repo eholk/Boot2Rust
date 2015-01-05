@@ -1,7 +1,7 @@
-use core::container::Container;
+use core::prelude::*;
 
-pub type EFI_HANDLE = *();
-pub struct EFI_GUID(u32, u16, u16, [u8, ..8]);
+pub type EFI_HANDLE = *const ();
+pub struct EFI_GUID(u32, u16, u16, [u8; 8]);
 
 struct EFI_TABLE_HEADER {
     Signature  : u64,
@@ -13,21 +13,21 @@ struct EFI_TABLE_HEADER {
 
 pub struct EFI_SYSTEM_TABLE {
     Hdr : EFI_TABLE_HEADER,
-    FirmwareVendor : *u16,
+    FirmwareVendor : *const u16,
     FirmwareRevision : u32,
     ConsoleInHandle : EFI_HANDLE,
-    ConIn : *EFI_SIMPLE_TEXT_INPUT_PROTOCOL,
+    ConIn : *const EFI_SIMPLE_TEXT_INPUT_PROTOCOL,
     ConsoleOutHandle : EFI_HANDLE,
-    ConOut : *EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
+    ConOut : *const EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
     ConsoleErrorHandle : EFI_HANDLE,
-    StdErr : *EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
-    RuntimeServices : *EFI_RUNTIME_SERVICES,
-    BootServices : *EFI_BOOT_SERVICES,
+    StdErr : *const EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
+    RuntimeServices : *const EFI_RUNTIME_SERVICES,
+    BootServices : *const EFI_BOOT_SERVICES,
     NumberOfTableEntries : uint,
-    ConfigurationTable : *EFI_CONFIGURATION_TABLE
+    ConfigurationTable : *const EFI_CONFIGURATION_TABLE
 }
 
-pub static mut SYSTEM_TABLE : *EFI_SYSTEM_TABLE = 0 as *EFI_SYSTEM_TABLE;
+pub static mut SYSTEM_TABLE : *const EFI_SYSTEM_TABLE = 0 as *const EFI_SYSTEM_TABLE;
 
 struct EFI_SIMPLE_TEXT_INPUT_PROTOCOL;
 
@@ -37,10 +37,10 @@ struct EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL {
     // ... and more stuff that we're ignoring.
 }
 
-type EFI_TEXT_RESET = *();
+type EFI_TEXT_RESET = *const ();
 
-type EFI_TEXT_STRING = extern "win64" fn(*EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
-                                         *u16);
+type EFI_TEXT_STRING = extern "win64" fn(*const EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
+                                         *const u16);
 
 struct EFI_RUNTIME_SERVICES;
 
@@ -48,14 +48,14 @@ struct EFI_BOOT_SERVICES;
 
 struct EFI_CONFIGURATION_TABLE {
     VendorGuid : EFI_GUID,
-    VendorTable : *()
+    VendorTable : *const ()
 }
 
-pub struct SystemTable(*EFI_SYSTEM_TABLE);
+pub struct SystemTable(*const EFI_SYSTEM_TABLE);
 
 
 impl SystemTable {
-    #[no_split_stack]
+    #[no_stack_check]
     pub fn console(&self) -> Console {
         unsafe {
             let &SystemTable(tbl) = self;
@@ -67,29 +67,29 @@ impl SystemTable {
     }
 }
 
-fn unpack<T>(slice: &[T]) -> (*T, uint) {
+fn unpack<T>(slice: &[T]) -> (*const T, uint) {
     unsafe {
         transmute(slice)
     }
 }
 
 pub trait SimpleTextOutput {
-    unsafe fn write_raw(&self, str: *u16);
+    unsafe fn write_raw(&self, str: *const u16);
     
-    #[no_split_stack]
+    #[no_stack_check]
     fn write(&self, str: &str) {
-        let mut buf = [0u16, ..4096];
+        let mut buf = [0u16; 4096];
 
         let mut i = 0;
         while i < buf.len() && i < str.len() {
             // TODO: make sure the characters are all ascii
-            buf[i] = str[i] as u16;
+            buf[i] = str.char_at(i) as u16;
             i += 1;
         }
         buf[buf.len() - 1] = 0;
         
         unsafe {
-            let (p, _) = unpack(buf);
+            let (p, _) = unpack(&buf);
             self.write_raw(p);
         }
     }
@@ -99,13 +99,13 @@ pub trait SimpleTextInput {
 }
 
 pub struct Console {
-    priv input  : *EFI_SIMPLE_TEXT_INPUT_PROTOCOL,
-    priv output : *EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
+    input  : *const EFI_SIMPLE_TEXT_INPUT_PROTOCOL,
+    output : *const EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
 }
 
 impl SimpleTextOutput for Console {
-    #[no_split_stack]
-    unsafe fn write_raw(&self, str: *u16) {
+    #[no_stack_check]
+    unsafe fn write_raw(&self, str: *const u16) {
         ((*(*self).output).OutputString)(self.output, str);
     }
 }
@@ -118,23 +118,23 @@ extern "rust-intrinsic" {
 }
 
 #[no_mangle]
-#[no_split_stack]
+#[no_stack_check]
 pub extern "win64" fn efi_start(_ImageHandle : EFI_HANDLE,
-                                sys_table : *EFI_SYSTEM_TABLE) -> int {
+                                sys_table : *const EFI_SYSTEM_TABLE) -> int {
     unsafe { SYSTEM_TABLE = sys_table; }
     ::efi_main(SystemTable(sys_table));
     0
 }
 
 #[no_mangle]
-#[no_split_stack]
+#[no_stack_check]
 pub fn __morestack() {
     // Horrible things will probably happen if this is ever called.
 }
 
 #[no_mangle]
-#[no_split_stack]
-pub extern fn memset(s : *u8, c : int, n : uint) -> *u8 {
+#[no_stack_check]
+pub extern fn memset(s : *const u8, c : int, n : uint) -> *const u8 {
     unsafe {
         let s : &mut [u8] = transmute((s, n));
         let mut i = 0;
